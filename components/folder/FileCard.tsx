@@ -1,5 +1,9 @@
 "use client"
 
+import {
+  displaySkipReasonForFile,
+  getMimeTypeLabel,
+} from "@/lib/utils/mime-types"
 import type { DriveFileListItem } from "@/types/drive"
 import type { FileIngestStatus } from "@/hooks/useIngestion"
 
@@ -37,10 +41,13 @@ export function FileCard({ file, status, error, skipReason }: FileCardProps) {
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-card-foreground">{file.name}</p>
-        <p className="truncate text-xs text-muted-foreground">{file.mimeType}</p>
-        {status === "skipped" && skipReason ? (
+        <p className="truncate text-xs text-muted-foreground">
+          {getMimeTypeLabel(file.mimeType)}
+        </p>
+        {status === "skipped" ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            Skipped: {skipReason}
+            Not indexed:{" "}
+            {displaySkipReasonForFile(skipReason, file.mimeType)}
           </p>
         ) : null}
         {error ? <p className="mt-1 text-xs text-destructive">{error}</p> : null}

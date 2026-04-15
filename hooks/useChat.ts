@@ -49,7 +49,7 @@ export function useChat(folderId: string, sessionId: string | null) {
   useEffect(() => {
     setMessages([])
     setError(null)
-  }, [folderId])
+  }, [folderId, sessionId])
 
   const hydrate = useCallback((rows: Omit<ChatMessage, "isStreaming" | "streamError">[]) => {
     setMessages(

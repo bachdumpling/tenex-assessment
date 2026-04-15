@@ -6,7 +6,7 @@ import { extractGoogleSheet } from "@/lib/ingestion/extractors/google-sheets"
 import { extractGoogleSlides } from "@/lib/ingestion/extractors/google-slides"
 import { extractPdfText } from "@/lib/ingestion/extractors/pdf"
 import { extractPlaintextFromBuffer } from "@/lib/ingestion/extractors/plaintext"
-import { getExtractorKind } from "@/lib/utils/mime-types"
+import { getExtractorKind, getUnsupportedIngestMessage } from "@/lib/utils/mime-types"
 
 export type ExtractTextResult =
   | { ok: true; text: string }
@@ -38,10 +38,10 @@ export async function extractDocumentText(
       case "unsupported":
         return {
           ok: false,
-          reason: `Unsupported MIME type for indexing: ${mimeType}`,
+          reason: getUnsupportedIngestMessage(mimeType),
         }
       default:
-        return { ok: false, reason: `Unsupported MIME type: ${mimeType}` }
+        return { ok: false, reason: getUnsupportedIngestMessage(mimeType) }
     }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)

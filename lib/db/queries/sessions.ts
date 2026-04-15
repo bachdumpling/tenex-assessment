@@ -2,10 +2,11 @@ import "server-only"
 
 import { getServiceRoleClient } from "@/lib/db/supabase"
 
-export async function ensureSessionForUserFolder(
+/** Latest session for this user+folder, or null if none. */
+export async function getLatestSessionForUserFolder(
   userId: string,
   folderId: string
-): Promise<{ id: string }> {
+): Promise<{ id: string } | null> {
   const sb = getServiceRoleClient()
   const { data: existing, error: selErr } = await sb
     .from("sessions")
@@ -17,7 +18,15 @@ export async function ensureSessionForUserFolder(
     .maybeSingle()
   if (selErr) throw selErr
   if (existing?.id) return { id: existing.id as string }
+  return null
+}
 
+/** Always inserts a new session row (e.g. “New chat”). */
+export async function createSessionForUserFolder(
+  userId: string,
+  folderId: string
+): Promise<{ id: string }> {
+  const sb = getServiceRoleClient()
   const { data, error } = await sb
     .from("sessions")
     .insert({ user_id: userId, folder_id: folderId })
@@ -25,6 +34,15 @@ export async function ensureSessionForUserFolder(
     .single()
   if (error) throw error
   return { id: data.id as string }
+}
+
+export async function ensureSessionForUserFolder(
+  userId: string,
+  folderId: string
+): Promise<{ id: string }> {
+  const latest = await getLatestSessionForUserFolder(userId, folderId)
+  if (latest) return latest
+  return createSessionForUserFolder(userId, folderId)
 }
 
 export async function getSessionIfOwned(

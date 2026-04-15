@@ -1,5 +1,5 @@
 import { auth } from "@/auth"
-import { listFilesInFolder } from "@/lib/google/drive"
+import { getFileMetadata, listFilesInFolder } from "@/lib/google/drive"
 import { getValidAccessToken } from "@/lib/google/tokens"
 import { NextResponse } from "next/server"
 
@@ -19,7 +19,16 @@ export async function GET(_req: Request, context: RouteContext) {
   try {
     const token = await getValidAccessToken(session.user.id)
     const files = await listFilesInFolder(token, folderId)
-    return NextResponse.json({ files })
+
+    let folder: { id: string; name: string } | undefined
+    try {
+      const meta = await getFileMetadata(token, folderId)
+      folder = { id: meta.id, name: meta.name }
+    } catch {
+      /* listing still succeeds without folder label */
+    }
+
+    return NextResponse.json(folder ? { files, folder } : { files })
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to list files"
     return NextResponse.json({ error: message }, { status: 500 })

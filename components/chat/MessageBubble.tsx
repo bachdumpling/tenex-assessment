@@ -101,50 +101,110 @@ function splitWithDocMarkers(text: string): DocPart[] {
   return out
 }
 
-function renderAssistantDocPart(
-  part: DocPart,
-  index: number,
+/** Single-line H1–H3 only (typical “title” + following [doc:…] from the model). */
+function isHeadingOnlyMarkdown(value: string): boolean {
+  const lines = value.trim().split("\n")
+  return lines.length === 1 && /^#{1,3}\s+\S/.test(lines[0]!)
+}
+
+function renderCitePart(
+  part: Extract<DocPart, { type: "cite" }>,
+  key: string,
   message: ChatMessage,
   showCitations: boolean,
   onOpenCitation: (c: Citation) => void
 ): ReactNode {
-  if (part.type === "md") {
-    if (!part.value) return null
-    return (
-      <div
-        key={index}
-        className="assistant-md-block min-w-0 text-foreground [&:not(:first-child)]:mt-3"
-      >
-        <ReactMarkdown
-          remarkPlugins={assistantMarkdownPlugins}
-          components={assistantMarkdownComponents}
-        >
-          {part.value}
-        </ReactMarkdown>
-      </div>
-    )
-  }
   if (!showCitations) {
     return (
-      <span key={index} className="font-mono text-[11px] text-muted-foreground">
+      <span key={key} className="font-mono text-[11px] text-muted-foreground">
         [doc:{part.chunkId}]
       </span>
     )
   }
   const citation = citationForChunk(message.citations, part.chunkId)
   if (citation) {
-    return (
-      <CitationChip key={index} citation={citation} onOpen={onOpenCitation} />
-    )
+    return <CitationChip key={key} citation={citation} onOpen={onOpenCitation} />
   }
   return (
     <code
-      key={index}
+      key={key}
       className="rounded bg-muted px-1 font-mono text-[10px] text-muted-foreground"
     >
       [{part.chunkId.slice(0, 8)}…]
     </code>
   )
+}
+
+function renderMarkdownBlock(key: string, value: string): ReactNode {
+  if (!value) return null
+  return (
+    <div
+      key={key}
+      className="assistant-md-block min-w-0 text-foreground [&:not(:first-child)]:mt-3"
+    >
+      <ReactMarkdown
+        remarkPlugins={assistantMarkdownPlugins}
+        components={assistantMarkdownComponents}
+      >
+        {value}
+      </ReactMarkdown>
+    </div>
+  )
+}
+
+function renderAssistantDocParts(
+  parts: DocPart[],
+  message: ChatMessage,
+  showCitations: boolean,
+  onOpenCitation: (c: Citation) => void
+): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let i = 0
+  while (i < parts.length) {
+    const part = parts[i]!
+    if (part.type === "md" && isHeadingOnlyMarkdown(part.value)) {
+      const citeParts: Extract<DocPart, { type: "cite" }>[] = []
+      let j = i + 1
+      while (j < parts.length && parts[j]!.type === "cite") {
+        citeParts.push(parts[j] as Extract<DocPart, { type: "cite" }>)
+        j++
+      }
+      if (citeParts.length > 0) {
+        nodes.push(
+          <div
+            key={`heading-cites-${i}`}
+            className="assistant-md-block-row flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 [&:not(:first-child)]:mt-3"
+          >
+            <div className="assistant-md-block min-w-0 max-w-[min(100%,42rem)] flex-1 text-foreground">
+              <ReactMarkdown
+                remarkPlugins={assistantMarkdownPlugins}
+                components={assistantMarkdownComponents}
+              >
+                {part.value}
+              </ReactMarkdown>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-baseline gap-1">
+              {citeParts.map((c, k) =>
+                renderCitePart(c, `hc-${i}-${k}`, message, showCitations, onOpenCitation)
+              )}
+            </div>
+          </div>
+        )
+        i = j
+        continue
+      }
+    }
+    if (part.type === "md") {
+      nodes.push(renderMarkdownBlock(`md-${i}`, part.value))
+      i++
+      continue
+    }
+    nodes.push(
+      renderCitePart(part, `cite-${i}`, message, showCitations, onOpenCitation)
+    )
+    i++
+  }
+  return nodes
 }
 
 type MessageBubbleProps = {
@@ -178,9 +238,12 @@ export function MessageBubble({ message, onOpenCitation }: MessageBubbleProps) {
         <>
           {showInitialTyping ? <AssistantTypingBubble /> : null}
           <ReasoningTrace items={message.reasoning} />
-          <div className="max-w-none space-y-2 pt-1 text-foreground [&>.assistant-md-block:first-of-type]:mt-4 [&_.assistant-md-block_a]:text-primary [&_.assistant-md-block_a]:underline [&_.assistant-md-block_a]:underline-offset-2 [&_.assistant-md-block_code]:rounded [&_.assistant-md-block_code]:bg-muted/50 [&_.assistant-md-block_code]:px-1 [&_.assistant-md-block_code]:font-mono [&_.assistant-md-block_code]:text-xs [&_.assistant-md-block_li]:my-0.5 [&_.assistant-md-block_ol]:my-2 [&_.assistant-md-block_ol]:list-decimal [&_.assistant-md-block_ol]:pl-5 [&_.assistant-md-block_ul]:my-2 [&_.assistant-md-block_ul]:list-disc [&_.assistant-md-block_ul]:pl-5">
-            {splitWithDocMarkers(message.content).map((part, i) =>
-              renderAssistantDocPart(part, i, message, showCitations, onOpenCitation)
+          <div className="max-w-none space-y-2 pt-1 text-foreground [&>.assistant-md-block-row:first-of-type]:mt-4 [&>.assistant-md-block:first-of-type]:mt-4 [&_.assistant-md-block_a]:text-primary [&_.assistant-md-block_a]:underline [&_.assistant-md-block_a]:underline-offset-2 [&_.assistant-md-block_code]:rounded [&_.assistant-md-block_code]:bg-muted/50 [&_.assistant-md-block_code]:px-1 [&_.assistant-md-block_code]:font-mono [&_.assistant-md-block_code]:text-xs [&_.assistant-md-block_li]:my-0.5 [&_.assistant-md-block_ol]:my-2 [&_.assistant-md-block_ol]:list-decimal [&_.assistant-md-block_ol]:pl-5 [&_.assistant-md-block_ul]:my-2 [&_.assistant-md-block_ul]:list-disc [&_.assistant-md-block_ul]:pl-5">
+            {renderAssistantDocParts(
+              splitWithDocMarkers(message.content),
+              message,
+              showCitations,
+              onOpenCitation
             )}
           </div>
           {message.streamError ? (

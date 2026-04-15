@@ -14,7 +14,7 @@ import { getValidAccessToken } from "@/lib/google/tokens"
 import { chunkDocumentText, chunkerSourceForMime } from "@/lib/ingestion/chunker"
 import { embedDocumentChunks } from "@/lib/ingestion/embedder"
 import { extractDocumentText } from "@/lib/ingestion/extract"
-import { getExtractorKind } from "@/lib/utils/mime-types"
+import { getExtractorKind, getUnsupportedIngestMessage } from "@/lib/utils/mime-types"
 
 const MAX_FILE_BYTES = 28 * 1024 * 1024
 const MAX_EXTRACTED_CHARS = 260_000
@@ -64,6 +64,7 @@ export async function runFolderFileIngest(params: {
     const kind = getExtractorKind(meta.mimeType)
 
     if (kind === "unsupported") {
+      const skipMessage = getUnsupportedIngestMessage(meta.mimeType)
       const doc = await upsertDocumentByDriveFileId({
         folderId,
         driveFileId: fileId,
@@ -71,7 +72,7 @@ export async function runFolderFileIngest(params: {
         mimeType: meta.mimeType,
         driveUrl,
         status: "skipped",
-        error: `Unsupported MIME type: ${meta.mimeType}`,
+        error: skipMessage,
         tokenCount: null,
         indexedAt: null,
       })

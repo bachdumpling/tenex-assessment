@@ -6,7 +6,7 @@ import { IngestionProgress } from "@/components/folder/IngestionProgress"
 import { SegmentViewNode } from "@/components/folder/SegmentViewNode"
 import { useFolderTree } from "@/hooks/useFolderTree"
 import type { ChatMessage } from "@/types/chat"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type FolderWorkspaceProps = {
   folderId: string
@@ -21,6 +21,7 @@ type FolderChatPayload = {
 export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
   const {
     files,
+    folderName,
     statusById,
     errorsById,
     skipReasonById,
@@ -117,12 +118,33 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
       .map((f) => `What does “${f.name}” cover?`)
   }, [files, statusById])
 
+  const startNewChatSession = useCallback(async () => {
+    const res = await fetch(`/api/folder/${encodeURIComponent(folderId)}/chat`, {
+      method: "POST",
+    })
+    const data = (await res.json()) as {
+      sessionId?: string
+      error?: string
+    }
+    if (!res.ok) {
+      throw new Error(data.error ?? `Failed to start new chat (${res.status})`)
+    }
+    const sid = data.sessionId
+    if (!sid) {
+      throw new Error("No sessionId returned.")
+    }
+    setBootstrapSummary(null)
+    setSessionId(sid)
+    setInitialList([])
+    setServerThreadEmpty(true)
+  }, [folderId])
+
   const meta = (
     <div className="space-y-4">
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-foreground">Folder</h1>
-        <p className="mt-1 font-mono text-[11px] leading-snug text-muted-foreground break-all">
-          {folderId}
+        <p className="mt-1 text-sm leading-snug text-muted-foreground">
+          {folderName ?? "This folder"}
         </p>
       </div>
       {loadError ? <p className="text-sm text-destructive">{loadError}</p> : null}
@@ -154,12 +176,13 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
 
   const chat = (
     <ChatPanel
-      key={folderId}
+      key={`${folderId}-${sessionId ?? "none"}`}
       folderId={folderId}
       sessionId={sessionId}
       initialRows={initialList}
       starterQuestions={starterQuestions}
       bootstrapSummary={bootstrapSummary}
+      onStartNewChat={startNewChatSession}
     />
   )
 

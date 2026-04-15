@@ -19,6 +19,7 @@ const limit = pLimit(3)
 
 export function useIngestion(folderId: string | null) {
   const [files, setFiles] = useState<DriveFileListItem[]>([])
+  const [folderName, setFolderName] = useState<string | null>(null)
   const [statusById, setStatusById] = useState<StatusMap>({})
   const [errorsById, setErrorsById] = useState<ErrorMap>({})
   const [skipReasonById, setSkipReasonById] = useState<SkipReasonMap>({})
@@ -33,15 +34,21 @@ export function useIngestion(folderId: string | null) {
     setLoadError(null)
     setErrorsById({})
     setSkipReasonById({})
+    setFolderName(null)
     try {
       const res = await fetch(
         `/api/folder/${encodeURIComponent(folderId)}/files`
       )
-      const body = (await res.json()) as { files?: DriveFileListItem[]; error?: string }
+      const body = (await res.json()) as {
+        files?: DriveFileListItem[]
+        folder?: { id: string; name: string }
+        error?: string
+      }
       if (!res.ok) {
         throw new Error(body.error ?? "Failed to list folder files")
       }
       const list = body.files ?? []
+      setFolderName(body.folder?.name?.trim() || null)
       setFiles(list)
       const initial: StatusMap = {}
       for (const f of list) initial[f.id] = "pending"
@@ -76,7 +83,7 @@ export function useIngestion(folderId: string | null) {
               if (ui === "skipped") {
                 const reason =
                   ingestBody.detail?.trim() ||
-                  `Unsupported type (${f.mimeType})`
+                  "This file type isn’t supported for indexing yet."
                 setSkipReasonById((m) => ({ ...m, [f.id]: reason }))
               }
             } catch (err) {
@@ -98,6 +105,7 @@ export function useIngestion(folderId: string | null) {
   useEffect(() => {
     if (!folderId) {
       setFiles([])
+      setFolderName(null)
       setStatusById({})
       setErrorsById({})
       setSkipReasonById({})
@@ -114,6 +122,7 @@ export function useIngestion(folderId: string | null) {
 
   return {
     files,
+    folderName,
     statusById,
     errorsById,
     skipReasonById,

@@ -14,7 +14,7 @@ import { useChat } from "@/hooks/useChat"
 import { useCitations } from "@/hooks/useCitations"
 import type { ChatMessage } from "@/types/chat"
 import { Loader2, MessageSquarePlus } from "lucide-react"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 type ChatPanelProps = {
   folderId: string
@@ -23,6 +23,8 @@ type ChatPanelProps = {
   starterQuestions: string[]
   /** Injected after ingest when the thread is still empty (server summary). */
   bootstrapSummary?: string | null
+  /** Persist a new DB session so “New chat” survives refresh. */
+  onStartNewChat?: () => Promise<void>
 }
 
 export function ChatPanel({
@@ -31,6 +33,7 @@ export function ChatPanel({
   initialRows,
   starterQuestions,
   bootstrapSummary,
+  onStartNewChat,
 }: ChatPanelProps) {
   const {
     messages,
@@ -44,6 +47,8 @@ export function ChatPanel({
   const { drawerOpen, activeCitation, openCitation, closeDrawer } = useCitations()
   const hydratedRef = useRef(false)
   const bootstrappedRef = useRef(false)
+  const [newChatBusy, setNewChatBusy] = useState(false)
+  const [newChatError, setNewChatError] = useState<string | null>(null)
 
   useEffect(() => {
     if (initialRows == null || hydratedRef.current) return
@@ -75,17 +80,40 @@ export function ChatPanel({
           variant="outline"
           size="default"
           className="shrink-0"
-          disabled={messages.length === 0 && !loading && !error}
+          disabled={
+            !sessionId ||
+            loading ||
+            newChatBusy ||
+            (messages.length === 0 && !error)
+          }
           onClick={() => {
-            resetChat()
-            closeDrawer()
-            bootstrappedRef.current = false
+            void (async () => {
+              setNewChatError(null)
+              closeDrawer()
+              if (onStartNewChat) {
+                setNewChatBusy(true)
+                try {
+                  await onStartNewChat()
+                } catch (e) {
+                  setNewChatError(
+                    e instanceof Error ? e.message : "Could not start new chat"
+                  )
+                } finally {
+                  setNewChatBusy(false)
+                }
+                return
+              }
+              resetChat()
+            })()
           }}
         >
           <MessageSquarePlus aria-hidden />
           New chat
         </Button>
       </div>
+      {newChatError ? (
+        <p className="mb-2 text-xs text-destructive">{newChatError}</p>
+      ) : null}
 
       {starterQuestions.length > 0 && messages.length === 0 && !loading ? (
         <div className="mb-3 shrink-0 flex flex-wrap gap-2">
