@@ -23,9 +23,11 @@ type FileCardProps = {
   file: DriveFileListItem
   status: FileIngestStatus | undefined
   error?: string
+  /** Shown after ingest when status is `skipped` (from API `detail`). */
+  skipReason?: string
 }
 
-export function FileCard({ file, status, error }: FileCardProps) {
+export function FileCard({ file, status, error, skipReason }: FileCardProps) {
   return (
     <div className="flex items-start gap-3 rounded-md border border-border bg-card px-3 py-2">
       <span
@@ -36,6 +38,11 @@ export function FileCard({ file, status, error }: FileCardProps) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-card-foreground">{file.name}</p>
         <p className="truncate text-xs text-muted-foreground">{file.mimeType}</p>
+        {status === "skipped" && skipReason ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Skipped: {skipReason}
+          </p>
+        ) : null}
         {error ? <p className="mt-1 text-xs text-destructive">{error}</p> : null}
       </div>
     </div>

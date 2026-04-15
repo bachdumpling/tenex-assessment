@@ -8,9 +8,15 @@ type FolderTreeProps = {
   files: DriveFileListItem[]
   statusById: Record<string, FileIngestStatus>
   errorsById: Record<string, string>
+  skipReasonById: Record<string, string>
 }
 
-export function FolderTree({ files, statusById, errorsById }: FolderTreeProps) {
+export function FolderTree({
+  files,
+  statusById,
+  errorsById,
+  skipReasonById,
+}: FolderTreeProps) {
   if (files.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -27,6 +33,7 @@ export function FolderTree({ files, statusById, errorsById }: FolderTreeProps) {
             file={file}
             status={statusById[file.id]}
             error={errorsById[file.id]}
+            skipReason={skipReasonById[file.id]}
           />
         </li>
       ))}

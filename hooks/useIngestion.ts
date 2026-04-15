@@ -13,6 +13,7 @@ export type FileIngestStatus =
 
 type StatusMap = Record<string, FileIngestStatus>
 type ErrorMap = Record<string, string>
+type SkipReasonMap = Record<string, string>
 
 const limit = pLimit(3)
 
@@ -20,6 +21,7 @@ export function useIngestion(folderId: string | null) {
   const [files, setFiles] = useState<DriveFileListItem[]>([])
   const [statusById, setStatusById] = useState<StatusMap>({})
   const [errorsById, setErrorsById] = useState<ErrorMap>({})
+  const [skipReasonById, setSkipReasonById] = useState<SkipReasonMap>({})
   const [loadError, setLoadError] = useState<string | null>(null)
   const [phase, setPhase] = useState<"idle" | "listing" | "ingesting" | "done">(
     "idle"
@@ -30,6 +32,7 @@ export function useIngestion(folderId: string | null) {
     setPhase("listing")
     setLoadError(null)
     setErrorsById({})
+    setSkipReasonById({})
     try {
       const res = await fetch(
         `/api/folder/${encodeURIComponent(folderId)}/files`
@@ -58,6 +61,7 @@ export function useIngestion(folderId: string | null) {
                 ok?: boolean
                 status?: string
                 error?: string
+                detail?: string
               }
               if (!ingestBody.ok) {
                 setStatusById((s) => ({ ...s, [f.id]: "failed" }))
@@ -69,6 +73,12 @@ export function useIngestion(folderId: string | null) {
               const ui: FileIngestStatus =
                 ingestBody.status === "skipped" ? "skipped" : "done"
               setStatusById((s) => ({ ...s, [f.id]: ui }))
+              if (ui === "skipped") {
+                const reason =
+                  ingestBody.detail?.trim() ||
+                  `Unsupported type (${f.mimeType})`
+                setSkipReasonById((m) => ({ ...m, [f.id]: reason }))
+              }
             } catch (err) {
               const msg = err instanceof Error ? err.message : "Ingest failed"
               setStatusById((s) => ({ ...s, [f.id]: "failed" }))
@@ -80,6 +90,7 @@ export function useIngestion(folderId: string | null) {
       setPhase("done")
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Ingestion failed")
+      setSkipReasonById({})
       setPhase("idle")
     }
   }, [folderId])
@@ -89,6 +100,7 @@ export function useIngestion(folderId: string | null) {
       setFiles([])
       setStatusById({})
       setErrorsById({})
+      setSkipReasonById({})
       setPhase("idle")
       return
     }
@@ -104,6 +116,7 @@ export function useIngestion(folderId: string | null) {
     files,
     statusById,
     errorsById,
+    skipReasonById,
     loadError,
     phase,
     total: files.length,

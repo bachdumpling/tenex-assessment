@@ -13,6 +13,7 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
     files,
     statusById,
     errorsById,
+    skipReasonById,
     loadError,
     phase,
     total,
@@ -31,6 +32,7 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
           files={files}
           statusById={statusById}
           errorsById={errorsById}
+          skipReasonById={skipReasonById}
         />
       </div>
       {phase === "listing" ? (
