@@ -49,3 +49,27 @@ export async function embedDocumentChunks(texts: string[]): Promise<number[][]> 
 
   return all
 }
+
+/**
+ * Embed a single user search query for vector similarity (RETRIEVAL_QUERY).
+ */
+export async function embedSearchQuery(text: string): Promise<number[]> {
+  const trimmed = text.trim()
+  if (!trimmed) {
+    throw new Error("Search query text is empty.")
+  }
+  const ai = getClient()
+  const res = await ai.models.embedContent({
+    model: MODEL,
+    contents: [trimmed],
+    config: { taskType: "RETRIEVAL_QUERY" },
+  })
+  const emb = res.embeddings?.[0]
+  const values = emb?.values
+  if (!values || values.length !== EXPECTED_DIM) {
+    throw new Error(
+      `Invalid query embedding dimension: expected ${EXPECTED_DIM}, got ${values?.length ?? 0}`
+    )
+  }
+  return [...values]
+}

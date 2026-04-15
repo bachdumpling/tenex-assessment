@@ -23,8 +23,19 @@ export type StreamEventDone = {
   citations: Citation[]
 }
 
+export type StreamEventError = {
+  type: "error"
+  message: string
+}
+
 export type StreamEvent =
   | StreamEventToolCall
   | StreamEventToolResult
   | StreamEventText
   | StreamEventDone
+  | StreamEventError
+
+export type ChatApiMessage = {
+  role: "user" | "assistant"
+  content: string
+}

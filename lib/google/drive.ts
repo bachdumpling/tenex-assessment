@@ -1,5 +1,6 @@
 import "server-only"
 
+import { getValidAccessToken } from "@/lib/google/tokens"
 import type { DriveFileListItem, DriveFileMetadata } from "@/types/drive"
 
 const DRIVE_FILES = "https://www.googleapis.com/drive/v3/files"
@@ -83,6 +84,15 @@ export async function getFileMetadata(
     parents: data.parents ?? [],
     size: data.size ?? null,
   }
+}
+
+/** Throws if the user cannot read this Drive file or folder (Drive `files.get`). */
+export async function assertUserCanAccessDriveFile(
+  userId: string,
+  fileId: string
+): Promise<void> {
+  const accessToken = await getValidAccessToken(userId)
+  await getFileMetadata(accessToken, fileId)
 }
 
 /** True if `folderId` appears in the file's parent chain (direct parent only in v3 list). */

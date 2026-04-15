@@ -52,6 +52,17 @@ export async function upsertDocumentByDriveFileId(
   return data as DocumentRow
 }
 
+export async function listDocumentsByFolderId(folderId: string): Promise<DocumentRow[]> {
+  const sb = getServiceRoleClient()
+  const { data, error } = await sb
+    .from("documents")
+    .select("*")
+    .eq("folder_id", folderId)
+    .order("name")
+  if (error) throw error
+  return (data ?? []) as DocumentRow[]
+}
+
 export async function updateDocumentById(
   id: string,
   patch: Partial<{
