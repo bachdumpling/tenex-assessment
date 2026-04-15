@@ -353,6 +353,35 @@ create table messages (
 
 ---
 
+## Features
+
+| Feature | Priority | Notes |
+|---|---|---|
+***REMOVED***
+| Paste Drive folder link | Must have | Primary entry point |
+| File ingestion: Docs, Sheets, Slides, PDF, plaintext | Must have | Covers all common Drive file types |
+| Per-file ingestion progress | Must have | UX clarity during indexing |
+| Chat interface | Must have | Core interaction model |
+| Agent with tool use (3 tools) | Must have | The architectural centerpiece |
+***REMOVED***
+| Citation drawer (source name, section, snippet, Drive link) | Must have | Makes citations usable, not just decorative |
+***REMOVED***
+| Dark mode | Must have | Design baseline |
+| Folder file list with per-file status dots | Must have | Feedback during ingestion |
+| Stale content detection + re-index banner | Nice to have | Shows production thinking |
+| Auto-generated folder summary on ingestion complete | Nice to have | Removes cold-start friction |
+| Auto-generated starter questions from file names | Nice to have | Removes cold-start friction |
+| Conversation history across page refreshes | Nice to have | Sessions + messages table already supports it |
+***REMOVED***
+| Multi-folder support (switch between indexed folders) | Nice to have | Good product extension |
+***REMOVED***
+| Write / edit Drive files | Won't have | Read-only by design (`drive.readonly`) |
+***REMOVED***
+| Mobile (Expo) version | Won't have | Web-only was the chosen path |
+***REMOVED***
+
+---
+
 ## Environment Variables
 
 ```bash
