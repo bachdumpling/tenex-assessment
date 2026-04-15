@@ -1,6 +1,7 @@
 import "server-only"
 
 import { buildCitationsForText } from "@/lib/agent/citations"
+import { ANTHROPIC_MESSAGES_MODEL } from "@/lib/agent/model"
 import { AGENT_TOOLS, executeAgentTool } from "@/lib/agent/tools"
 import type { StreamEvent } from "@/types/agent"
 import Anthropic from "@anthropic-ai/sdk"
@@ -12,7 +13,6 @@ import type {
   ToolUseBlock,
 } from "@anthropic-ai/sdk/resources/messages"
 
-const MODEL = "claude-3-5-sonnet-20241022"
 const MAX_TOOL_ROUNDS = 8
 const MAX_TOKENS = 2048
 
@@ -52,7 +52,7 @@ export function runAgentNdjsonStream(options: {
 
         for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
           const stream = client.messages.stream({
-            model: MODEL,
+            model: ANTHROPIC_MESSAGES_MODEL,
             max_tokens: MAX_TOKENS,
             system: systemPrompt,
             tools: AGENT_TOOLS,

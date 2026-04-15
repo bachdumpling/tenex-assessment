@@ -32,7 +32,7 @@ If a requirement is ambiguous, a file path is unclear, or a design decision has 
 |---|---|---|
 | Framework | Next.js 15, App Router, TypeScript | yes |
 | Styling | Tailwind CSS v4 + shadcn (Base UI preset `bd1gALys`) | yes |
-| Agent LLM | Claude 3.5 Sonnet via raw Anthropic SDK | yes |
+| Agent LLM | Claude Sonnet 4.6 via raw Anthropic SDK | yes |
 | Embeddings | Gemini `gemini-embedding-001` | yes |
 | Vector DB | Supabase pgvector | yes |
 | Vector index | HNSW | yes |

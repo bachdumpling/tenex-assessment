@@ -1,5 +1,8 @@
 import { auth } from "@/auth"
 import { createAgentNdjsonStream } from "@/lib/agent/index"
+import { forwardNdjsonStreamWithCapture } from "@/lib/chat/ndjson-forward"
+import { appendAssistantIfNew, appendUserIfNew } from "@/lib/db/queries/messages"
+import { getSessionIfOwned } from "@/lib/db/queries/sessions"
 import { assertUserCanAccessDriveFile } from "@/lib/google/drive"
 import type { ChatApiMessage } from "@/types/agent"
 import { NextResponse } from "next/server"
@@ -24,6 +27,9 @@ export async function POST(req: Request) {
   }
 
   const folderId = String((body as { folderId?: unknown }).folderId ?? "").trim()
+  const sessionIdRaw = String(
+    (body as { sessionId?: unknown }).sessionId ?? ""
+  ).trim()
   const rawMessages = (body as { messages?: unknown }).messages
 
   if (!folderId) {
@@ -76,10 +82,33 @@ export async function POST(req: Request) {
     )
   }
 
-  const stream = createAgentNdjsonStream({
+  let persistId: string | null = null
+  if (sessionIdRaw) {
+    const owned = await getSessionIfOwned(
+      sessionIdRaw,
+      session.user.id,
+      folderId
+    )
+    if (!owned) {
+      return NextResponse.json({ error: "Invalid sessionId." }, { status: 404 })
+    }
+    persistId = owned.id
+    await appendUserIfNew(persistId, last.content)
+  }
+
+  const inner = createAgentNdjsonStream({
     folderId,
     messages: parsed,
   })
+
+  const stream =
+    persistId !== null
+      ? forwardNdjsonStreamWithCapture(inner, async (cap) => {
+          if (!cap.sawError && cap.assistantText.trim()) {
+            await appendAssistantIfNew(persistId, cap.assistantText, cap.citations)
+          }
+        })
+      : inner
 
   return new Response(stream, {
     headers: {

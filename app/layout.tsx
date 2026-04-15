@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { AppSessionProvider } from "@/components/providers/app-session-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
@@ -30,13 +31,15 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn(
-        "dark h-full antialiased",
+        "dark h-full min-h-dvh antialiased",
         geistSans.variable,
         geistMono.variable
       )}
     >
-      <body className="flex min-h-full flex-col bg-background text-foreground">
-        <AppSessionProvider>{children}</AppSessionProvider>
+      <body className="flex min-h-dvh min-h-full flex-col bg-background text-foreground">
+        <TooltipProvider>
+          <AppSessionProvider>{children}</AppSessionProvider>
+        </TooltipProvider>
       </body>
     </html>
   );

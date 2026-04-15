@@ -70,7 +70,7 @@
 │    QUERY        │                           └──────────────────────┘
 │                 │
 │  Claude         │
-│  3.5 Sonnet     │
+│  Sonnet 4.6     │
 │  → tool use     │
 │  → streaming    │
 └─────────────────┘
@@ -82,7 +82,7 @@ Agent Tool Loop (inside /api/chat):
        │
        ▼
   ┌─────────────────────────────────────┐
-  │  Claude 3.5 Sonnet                  │
+  │  Claude Sonnet 4.6                  │
   │  system prompt + conversation       │
   │  history + folder context           │
   └──────────────┬──────────────────────┘
@@ -299,7 +299,7 @@ create table messages (
 - `lib/agent/tools.ts` — three tools: `search_documents`, `get_document_overview`, `get_chunk_context`
 - `lib/db/queries/chunks.ts` — pgvector cosine similarity search filtered by `folder_id`
 - `lib/agent/prompts.ts` — system prompt with citation marker instructions (`[doc:chunk_id]`)
-- `lib/agent/streaming.ts` — Claude 3.5 Sonnet streaming with tool use loop; emits structured events: `{ type: "tool_call" }`, `{ type: "tool_result" }`, `{ type: "text", delta }`, `{ type: "done", citations }`
+- `lib/agent/streaming.ts` — Claude Sonnet 4.6 streaming with tool use loop; emits structured events: `{ type: "tool_call" }`, `{ type: "tool_result" }`, `{ type: "text", delta }`, `{ type: "done", citations }`
 - `lib/agent/citations.ts` — parse `[doc:*]` markers, fetch chunk + document metadata, assemble `Citation[]`
 - `lib/agent/index.ts` — agent orchestrator that wires tools, prompts, and streaming loop together
 - `/api/chat/route.ts` — raw `ReadableStream` response; no AI SDK wrapper
@@ -341,7 +341,7 @@ create table messages (
 
 | Decision | Choice | Why |
 |---|---|---|
-| Agent LLM | Claude 3.5 Sonnet | Best tool-use reliability, clean streaming API |
+| Agent LLM | Claude Sonnet 4.6 | Strong tool use and streaming; current generation |
 | Embeddings | Gemini `embedding-001` | Higher quality for doc retrieval; separate `RETRIEVAL_DOCUMENT` / `RETRIEVAL_QUERY` task types improve precision |
 | Vector index | HNSW (not IVFFlat) | No minimum dataset size; IVFFlat degrades on small folders (< ~10k rows) |
 | Vector DB | Supabase pgvector | No extra infra, production-ready |
