@@ -11,8 +11,8 @@ export default async function HomePage() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-16">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-50">Your folders</h1>
-        <p className="mt-2 text-sm text-zinc-400">
+        <h1 className="text-2xl font-semibold text-foreground">Your folders</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
           Paste a Google Drive folder link to open it. Ingestion and chat arrive in
           later phases.
         </p>

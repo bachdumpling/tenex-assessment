@@ -24,6 +24,9 @@ export const authConfig = {
       const path = request.nextUrl.pathname
       if (path.startsWith("/api/auth")) return true
       if (path === "/login") return true
+      if (path.startsWith("/api/")) {
+        return !!auth?.user
+      }
       if (path === "/" || path.startsWith("/folder")) {
         return !!auth?.user
       }

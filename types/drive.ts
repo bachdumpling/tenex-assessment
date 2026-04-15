@@ -5,3 +5,15 @@ export type DriveFileListItem = {
   mimeType: string
   modifiedTime: string
 }
+
+/** Metadata from `files.get` for ingest / parent checks. */
+export type DriveFileMetadata = {
+  id: string
+  name: string
+  mimeType: string
+  modifiedTime: string
+  webViewLink: string | null
+  parents: string[]
+  /** Drive size string (bytes); absent for some native Google files. */
+  size: string | null
+}

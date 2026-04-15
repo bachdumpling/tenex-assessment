@@ -23,7 +23,7 @@ export function FolderLinkInput() {
 
   return (
     <div className="flex w-full max-w-xl flex-col gap-3">
-      <label className="text-sm font-medium text-zinc-200" htmlFor="folder-url">
+      <label className="text-sm font-medium text-foreground" htmlFor="folder-url">
         Google Drive folder link
       </label>
       <textarea
@@ -32,9 +32,9 @@ export function FolderLinkInput() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="https://drive.google.com/drive/folders/…"
-        className="w-full resize-y rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none ring-offset-zinc-950 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none ring-offset-background focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
       />
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button type="button" onClick={submit} className="self-start">
         Open folder
       </Button>

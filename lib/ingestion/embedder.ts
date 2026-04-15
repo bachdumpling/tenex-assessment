@@ -1,0 +1,51 @@
+import "server-only"
+
+import { GoogleGenAI } from "@google/genai"
+
+const MODEL = "gemini-embedding-001"
+const EXPECTED_DIM = 3072
+const BATCH_SIZE = 50
+
+function getClient(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set.")
+  }
+  return new GoogleGenAI({ apiKey })
+}
+
+/**
+ * Embed document chunks for ingestion. Batches of up to 50 per request.
+ * Uses RETRIEVAL_DOCUMENT task type (Gemini embedding API).
+ */
+export async function embedDocumentChunks(texts: string[]): Promise<number[][]> {
+  if (texts.length === 0) return []
+  const ai = getClient()
+  const all: number[][] = []
+
+  for (let offset = 0; offset < texts.length; offset += BATCH_SIZE) {
+    const batch = texts.slice(offset, offset + BATCH_SIZE)
+    const res = await ai.models.embedContent({
+      model: MODEL,
+      contents: batch,
+      config: { taskType: "RETRIEVAL_DOCUMENT" },
+    })
+    const embeddings = res.embeddings ?? []
+    if (embeddings.length !== batch.length) {
+      throw new Error(
+        `Embedding batch size mismatch: expected ${batch.length}, got ${embeddings.length}`
+      )
+    }
+    for (const emb of embeddings) {
+      const values = emb.values
+      if (!values || values.length !== EXPECTED_DIM) {
+        throw new Error(
+          `Invalid embedding dimension: expected ${EXPECTED_DIM}, got ${values?.length ?? 0}`
+        )
+      }
+      all.push([...values])
+    }
+  }
+
+  return all
+}

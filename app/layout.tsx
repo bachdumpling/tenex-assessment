@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { AppSessionProvider } from "@/components/providers/app-session-provider";
+import { cn } from "@/lib/utils";
 
 import "./globals.css";
 
@@ -28,9 +29,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={cn(
+        "dark h-full antialiased",
+        geistSans.variable,
+        geistMono.variable
+      )}
     >
-      <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-50">
+      <body className="flex min-h-full flex-col bg-background text-foreground">
         <AppSessionProvider>{children}</AppSessionProvider>
       </body>
     </html>
