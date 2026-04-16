@@ -1,4 +1,5 @@
 import { auth, signIn } from "@/auth"
+import { LoginHero } from "@/components/auth/LoginHero"
 import { Button } from "@/components/ui/button"
 import { redirect } from "next/navigation"
 
@@ -9,26 +10,17 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4">
-      <div className="max-w-md text-center">
-        <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
-          Talk to a Folder
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Sign in with Google (read-only Drive) to index a folder and chat with
-          citations.
-        </p>
-      </div>
+    <LoginHero>
       <form
         action={async () => {
           "use server"
           await signIn("google", { redirectTo: "/" })
         }}
       >
-        <Button type="submit" size="lg">
+        <Button type="submit" size="lg" className="w-full text-base">
           Continue with Google
         </Button>
       </form>
-    </div>
+    </LoginHero>
   )
 }
