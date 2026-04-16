@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // pdf-parse pulls pdfjs-dist; externalize parse layer only (pdfjs-dist is ESM-only for worker path)
+  // pdf-parse (v1) is CJS; keep external so the ingest route resolves it like Node at runtime
   serverExternalPackages: ["pdf-parse"],
 };
 

@@ -16,7 +16,7 @@ export function CitationChip({ citation, onOpen }: CitationChipProps) {
       onClick={() => onOpen(citation)}
       className={cn(
         "mx-0.5 inline-flex h-5 min-w-5 cursor-pointer items-center justify-center rounded-sm border border-primary/40 bg-primary/15 px-1 font-mono text-xs font-semibold leading-none text-primary tabular-nums transition-colors",
-        "hover:border-primary hover:bg-primary/25 hover:text-primary-foreground"
+        "hover:border-primary hover:bg-primary/25"
       )}
     >
       {citation.index}

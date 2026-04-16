@@ -2,21 +2,12 @@ import "server-only"
 
 import { createRequire } from "node:module"
 import { join } from "node:path"
-import { pathToFileURL } from "node:url"
-import { PDFParse } from "pdf-parse"
 
+/** pdf-parse@1.x — CommonJS build; avoids pdfjs-dist v4 + DOMMatrix in serverless (Vercel). */
 const require = createRequire(join(process.cwd(), "package.json"))
-const pdfWorkerHref = pathToFileURL(
-  require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs")
-).href
-PDFParse.setWorker(pdfWorkerHref)
+const pdfParse = require("pdf-parse") as (data: Buffer) => Promise<{ text?: string }>
 
 export async function extractPdfText(buffer: Buffer): Promise<string> {
-  const parser = new PDFParse({ data: new Uint8Array(buffer) })
-  try {
-    const result = await parser.getText()
-    return result.text ?? ""
-  } finally {
-    await parser.destroy()
-  }
+  const data = await pdfParse(buffer)
+  return data.text ?? ""
 }

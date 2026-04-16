@@ -1,6 +1,7 @@
 "use client"
 
 import { formatIngestErrorForDisplay } from "@/lib/utils/ingest-errors"
+import { driveWebUrlForListItem } from "@/lib/utils/drive-web-url"
 import {
   displaySkipReasonForFile,
   getMimeTypeLabel,
@@ -33,8 +34,16 @@ type FileCardProps = {
 }
 
 export function FileCard({ file, status, error, skipReason }: FileCardProps) {
+  const driveHref = driveWebUrlForListItem(file)
   return (
-    <div className="flex items-start gap-3 rounded-md border border-border bg-card px-3 py-2">
+    <a
+      href={driveHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Open “${file.name}” in Google Drive`}
+      aria-label={`Open ${file.name} in Google Drive`}
+      className="flex items-start gap-3 rounded-md border border-border bg-card px-3 py-2 outline-none transition-colors hover:border-border hover:bg-muted/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       <span
         className={`mt-1.5 size-2 shrink-0 rounded-full ${statusDotClass(status)}`}
         title={status ?? "unknown"}
@@ -57,6 +66,6 @@ export function FileCard({ file, status, error, skipReason }: FileCardProps) {
           </p>
         ) : null}
       </div>
-    </div>
+    </a>
   )
 }
