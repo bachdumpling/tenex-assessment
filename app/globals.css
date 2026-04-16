@@ -128,4 +128,24 @@
   body {
     @apply bg-background font-sans text-base text-foreground antialiased;
   }
+  button:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  input[type="button"]:disabled,
+  input[type="submit"]:disabled,
+  input[type="reset"]:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Triggers without default Tailwind classes (often wrap custom children) */
+  [data-slot="popover-trigger"],
+  [data-slot="tooltip-trigger"],
+  [data-slot="hover-card-trigger"],
+  [data-slot="dropdown-menu-trigger"] {
+    cursor: pointer;
+  }
 }
