@@ -1,11 +1,11 @@
 import "server-only"
 
-import { createRequire } from "node:module"
-import { join } from "node:path"
-
-/** pdf-parse@1.x — CommonJS build; avoids pdfjs-dist v4 + DOMMatrix in serverless (Vercel). */
-const require = createRequire(join(process.cwd(), "package.json"))
-const pdfParse = require("pdf-parse") as (data: Buffer) => Promise<{ text?: string }>
+// Import the inner module directly — pdf-parse/index.js has a debug self-test
+// that tries to read a non-existent test PDF when bundled by Turbopack.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require("pdf-parse/lib/pdf-parse") as (
+  data: Buffer
+) => Promise<{ text?: string }>
 
 export async function extractPdfText(buffer: Buffer): Promise<string> {
   const data = await pdfParse(buffer)
