@@ -333,7 +333,7 @@ create table messages (
 - Vercel: configure all env vars, add `maxDuration = 60` on ingest + chat routes, add production OAuth redirect URI in Google Cloud Console
 - Smoke test against a real Drive folder with mixed file types (Docs, Sheets, PDF)
 
-***REMOVED***
+**Exit criteria:** Deployed public link. Works on any accessible Drive folder.
 
 ---
 
@@ -346,9 +346,9 @@ create table messages (
 | Vector index | HNSW (not IVFFlat) | No minimum dataset size; IVFFlat degrades on small folders (< ~10k rows) |
 | Vector DB | Supabase pgvector | No extra infra, production-ready |
 | Auth | Auth.js v5 | Handles Google refresh token rotation correctly |
-***REMOVED***
-***REMOVED***
-***REMOVED***
+| Streaming | Raw `ReadableStream` | Full control over the stream protocol; no AI SDK wrapper |
+| Agent loop | Raw Anthropic SDK | Direct control over the tool-use loop without framework overhead |
+| Drive scope | `drive.readonly` | Minimal permissions — principle of least privilege |
 | Ingestion approach | Per-file API calls from client | No long-running server job; each file completes in < 10s; works on Vercel free tier; progress tracked in client state; naturally resumable |
 
 ---
@@ -357,28 +357,28 @@ create table messages (
 
 | Feature | Priority | Notes |
 |---|---|---|
-***REMOVED***
+| Google OAuth (GSuite) | Must have | Core auth requirement |
 | Paste Drive folder link | Must have | Primary entry point |
 | File ingestion: Docs, Sheets, Slides, PDF, plaintext | Must have | Covers all common Drive file types |
 | Per-file ingestion progress | Must have | UX clarity during indexing |
 | Chat interface | Must have | Core interaction model |
 | Agent with tool use (3 tools) | Must have | The architectural centerpiece |
-***REMOVED***
+| Inline citations with `[1]`, `[2]` chips | Must have | Core feature for grounded answers |
 | Citation drawer (source name, section, snippet, Drive link) | Must have | Makes citations usable, not just decorative |
-***REMOVED***
+| Reasoning trace (collapsible, shows files searched + chunks retrieved) | Must have | Transparency into the retrieval process |
 | Dark mode | Must have | Design baseline |
 | Folder file list with per-file status dots | Must have | Feedback during ingestion |
 | Stale content detection + re-index banner | Nice to have | Shows production thinking |
 | Auto-generated folder summary on ingestion complete | Nice to have | Removes cold-start friction |
 | Auto-generated starter questions from file names | Nice to have | Removes cold-start friction |
 | Conversation history across page refreshes | Nice to have | Sessions + messages table already supports it |
-***REMOVED***
+| Subfolder recursion (nested Drive folders) | Nice to have | Useful for deeply nested Drive structures |
 | Multi-folder support (switch between indexed folders) | Nice to have | Good product extension |
-***REMOVED***
+| File upload (non-Drive files) | Won't have | Out of scope for the Drive-focused product |
 | Write / edit Drive files | Won't have | Read-only by design (`drive.readonly`) |
-***REMOVED***
+| Real-time collaboration (multiple users in one session) | Won't have | Unnecessary complexity for a single-user product |
 | Mobile (Expo) version | Won't have | Web-only was the chosen path |
-***REMOVED***
+| User management / admin panel | Won't have | Single-user scope |
 
 ---
 

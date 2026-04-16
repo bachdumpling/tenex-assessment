@@ -65,4 +65,4 @@ Use **`drive.readonly`** scope only (see [AGENTS.md](./AGENTS.md)).
 
 ## License
 
-***REMOVED***
+Private use unless otherwise stated by the author.

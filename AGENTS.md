@@ -22,8 +22,6 @@ If a requirement is ambiguous, a file path is unclear, or a design decision has 
 
 **Talk-to-a-Folder** is a RAG-powered web app where users authenticate with Google, paste a Drive folder link, and chat with an agent that can answer questions about any file in that folder. Every answer includes citations linked back to source documents.
 
-
-
 ---
 
 ## Tech Stack (Locked)
@@ -45,8 +43,7 @@ If a requirement is ambiguous, a file path is unclear, or a design decision has 
 
 ### Agent Loop
 - Use the **raw Anthropic SDK** for the agent loop. No LangChain, no Vercel AI SDK wrapper.
-***REMOVED***
-- The agent loop lives in `lib/agent/streaming.ts` and must be written manually: receive message → call Claude → handle `tool_use` blocks → call tools → feed `tool_result` back → repeat until `end_turn`.
+- The agent loop lives in `lib/agent/streaming.ts` and is written manually: receive message → call Claude → handle `tool_use` blocks → call tools → feed `tool_result` back → repeat until `end_turn`.
 - LangChain is acceptable only for document text splitting utilities if it saves time. The agent loop itself must be raw.
 
 ### Streaming
@@ -79,7 +76,7 @@ If a requirement is ambiguous, a file path is unclear, or a design decision has 
 ### Supabase
 - `supabase/migrations/` is the authoritative schema source. Run with `supabase db push`.
 - Do not maintain a separate `schema.sql` — the migrations are the record.
-- Use HNSW index, not IVFFlat. IVFFlat degrades on small datasets (< ~10k rows).***REMOVED***
+- Use HNSW index, not IVFFlat. IVFFlat degrades on small datasets (< ~10k rows).
 - Enable pgvector extension in migration `002`.
 - Row Level Security: users may only read chunks from folders they have an active session for.
 
@@ -150,7 +147,7 @@ Unsupported types: set `status = 'skipped'` with a reason. Never silently drop f
 - Every assistant message has a collapsible `<ReasoningTrace>` section rendered above it.
 - It shows: which files were searched, how many chunks were retrieved, which were cited.
 - Data comes from `tool_call` and `tool_result` stream events, not from the final text.
-***REMOVED***
+- This is a key feature — do not cut it.
 
 ### Design Tone
 - Dark mode default.
