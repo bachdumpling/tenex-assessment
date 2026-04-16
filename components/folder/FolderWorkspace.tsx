@@ -4,9 +4,12 @@ import { ChatPanel } from "@/components/chat/ChatPanel"
 import { FolderTree } from "@/components/folder/FolderTree"
 import { IngestionProgress } from "@/components/folder/IngestionProgress"
 import { SegmentViewNode } from "@/components/folder/SegmentViewNode"
+import { StaleIndexBanner } from "@/components/folder/StaleIndexBanner"
 import { useFolderTree } from "@/hooks/useFolderTree"
+import { formatIngestErrorForDisplay } from "@/lib/utils/ingest-errors"
+import { touchRecentFolder } from "@/lib/utils/recent-folders"
 import type { ChatMessage } from "@/types/chat"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 type FolderWorkspaceProps = {
   folderId: string
@@ -29,6 +32,7 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
     phase,
     total,
     terminalCount,
+    refetch,
   } = useFolderTree(folderId)
 
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -36,23 +40,17 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
     ChatMessage,
     "isStreaming" | "streamError"
   >[] | null>(null)
-  const [serverThreadEmpty, setServerThreadEmpty] = useState<boolean | null>(null)
-  const [bootstrapSummary, setBootstrapSummary] = useState<string | null>(null)
-  const summaryRequested = useRef(false)
+  const [indexStale, setIndexStale] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    summaryRequested.current = false
-    setBootstrapSummary(null)
     async function loadSession() {
       setSessionId(null)
       setInitialList(null)
-      setServerThreadEmpty(null)
 
       const markThreadUnavailable = () => {
         setSessionId(null)
         setInitialList([])
-        setServerThreadEmpty(true)
       }
 
       try {
@@ -74,7 +72,6 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
           }))
         setSessionId(sid)
         setInitialList(rows)
-        setServerThreadEmpty(rows.length === 0)
       } catch {
         if (!cancelled) markThreadUnavailable()
       }
@@ -86,36 +83,50 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
   }, [folderId])
 
   useEffect(() => {
-    if (phase !== "done" || serverThreadEmpty !== true) return
-    if (summaryRequested.current) return
-    summaryRequested.current = true
+    if (phase !== "done") return
     let cancelled = false
-    async function run() {
+    async function checkStale() {
       try {
         const res = await fetch(
-          `/api/folder/${encodeURIComponent(folderId)}/summary`,
-          { method: "POST" }
+          `/api/folder/${encodeURIComponent(folderId)}/index-status`
         )
-        const data = (await res.json()) as { summary?: string; error?: string }
-        if (cancelled) return
-        if (res.ok && data.summary?.trim()) {
-          setBootstrapSummary(data.summary.trim())
-        }
+        if (!res.ok || cancelled) return
+        const data = (await res.json()) as { stale?: boolean }
+        if (!cancelled) setIndexStale(Boolean(data.stale))
       } catch {
-        /* ignore */
+        if (!cancelled) setIndexStale(false)
       }
     }
-    void run()
+    void checkStale()
     return () => {
       cancelled = true
     }
-  }, [phase, serverThreadEmpty, folderId])
+  }, [phase, folderId])
+
+  useEffect(() => {
+    if (phase !== "done" || !folderId) return
+    touchRecentFolder({
+      folderId,
+      label: folderName?.trim() || "Drive folder",
+    })
+  }, [phase, folderId, folderName])
 
   const starterQuestions = useMemo(() => {
-    return files
+    const defaults = [
+      "Give me a summary of the folder",
+      "What files are in this folder?",
+      "What are the main themes across these documents?",
+    ]
+    const fromFiles = files
       .filter((f) => statusById[f.id] === "done")
       .slice(0, 3)
       .map((f) => `What does “${f.name}” cover?`)
+    const out = [...defaults]
+    for (const q of fromFiles) {
+      if (out.length >= 6) break
+      if (!out.includes(q)) out.push(q)
+    }
+    return out
   }, [files, statusById])
 
   const startNewChatSession = useCallback(async () => {
@@ -133,21 +144,33 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
     if (!sid) {
       throw new Error("No sessionId returned.")
     }
-    setBootstrapSummary(null)
     setSessionId(sid)
     setInitialList([])
-    setServerThreadEmpty(true)
   }, [folderId])
 
   const meta = (
     <div className="space-y-4">
+      {indexStale ? (
+        <StaleIndexBanner
+          busy={phase === "listing" || phase === "ingesting"}
+          onReindex={() => {
+            void refetch()
+          }}
+        />
+      ) : null}
       <div>
-        <h1 className="text-lg font-semibold tracking-tight text-foreground">Folder</h1>
-        <p className="mt-1 text-sm leading-snug text-muted-foreground">
+        <h1 className="font-heading text-lg font-semibold tracking-tight text-foreground">
+          Folder
+        </h1>
+        <p className="mt-1 leading-snug text-muted-foreground">
           {folderName ?? "This folder"}
         </p>
       </div>
-      {loadError ? <p className="text-sm text-destructive">{loadError}</p> : null}
+      {loadError ? (
+        <p className="text-destructive">
+          {formatIngestErrorForDisplay(loadError)}
+        </p>
+      ) : null}
       <IngestionProgress done={terminalCount} total={total} />
       {phase === "listing" ? (
         <p className="text-xs text-muted-foreground">Loading file list…</p>
@@ -162,9 +185,13 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
 
   const filesPanel = (
     <div className="flex min-h-0 flex-col gap-3">
-      <h1 className="shrink-0 text-sm font-medium text-foreground">Files</h1>
+      <h1 className="shrink-0 font-heading text-lg font-semibold tracking-tight text-foreground">
+        Files
+      </h1>
       <div className="min-h-0 flex-1">
         <FolderTree
+          folderId={folderId}
+          phase={phase}
           files={files}
           statusById={statusById}
           errorsById={errorsById}
@@ -181,7 +208,6 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
       sessionId={sessionId}
       initialRows={initialList}
       starterQuestions={starterQuestions}
-      bootstrapSummary={bootstrapSummary}
       onStartNewChat={startNewChatSession}
     />
   )

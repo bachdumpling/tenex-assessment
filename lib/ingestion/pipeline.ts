@@ -167,6 +167,7 @@ export async function runFolderFileIngest(params: {
 
     return { ok: true, documentId: processing.id, status: "indexed" }
   } catch (e) {
+    console.error("[ingest] runFolderFileIngest", e)
     const message = e instanceof Error ? e.message : String(e)
     if (documentId) {
       await updateDocumentById(documentId, { status: "failed", error: message })

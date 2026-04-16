@@ -33,7 +33,7 @@ export function CitationDrawer({ open, citation, onClose }: CitationDrawerProps)
         aria-hidden={!open}
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h3 className="font-heading text-sm font-semibold tracking-tight text-foreground">
+          <h3 className="font-heading text-base font-semibold tracking-tight text-foreground">
             Source
           </h3>
           <Button
@@ -47,9 +47,9 @@ export function CitationDrawer({ open, citation, onClose }: CitationDrawerProps)
           </Button>
         </div>
         {citation ? (
-          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 text-sm">
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
                 Document
               </p>
               <p className="mt-1 font-medium text-foreground">{citation.documentName}</p>
@@ -71,7 +71,7 @@ export function CitationDrawer({ open, citation, onClose }: CitationDrawerProps)
               </div>
             )}
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
                 Excerpt
               </p>
               <CitationSnippet text={citation.snippet} />
@@ -90,7 +90,7 @@ export function CitationDrawer({ open, citation, onClose }: CitationDrawerProps)
             </a>
           </div>
         ) : (
-          <p className="p-4 text-sm text-muted-foreground">No citation selected.</p>
+          <p className="p-4 text-muted-foreground">No citation selected.</p>
         )}
       </aside>
     </>

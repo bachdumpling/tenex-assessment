@@ -36,7 +36,7 @@ export default function RootLayout({
         geistMono.variable
       )}
     >
-      <body className="flex min-h-dvh min-h-full flex-col bg-background text-foreground">
+      <body className="flex min-h-dvh min-h-full flex-col">
         <TooltipProvider>
           <AppSessionProvider>{children}</AppSessionProvider>
         </TooltipProvider>

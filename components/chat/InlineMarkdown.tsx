@@ -17,7 +17,7 @@ const inlineComponents: Partial<Components> = {
   ),
   em: ({ children }) => <em className="italic text-inherit">{children}</em>,
   code: ({ children }) => (
-    <code className="rounded bg-muted/50 px-1 font-mono text-[11px] text-inherit">
+    <code className="rounded bg-muted/50 px-1 font-mono text-xs text-inherit">
       {children}
     </code>
   ),

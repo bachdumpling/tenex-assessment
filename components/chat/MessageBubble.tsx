@@ -49,7 +49,7 @@ const assistantMarkdownComponents: Partial<Components> = {
   table({ children }) {
     return (
       <div className="my-3 max-w-full overflow-x-auto rounded-md border border-border bg-muted/10">
-        <table className="w-full min-w-max border-collapse text-left text-sm">
+        <table className="w-full min-w-max border-collapse text-left">
           {children}
         </table>
       </div>
@@ -73,7 +73,7 @@ const assistantMarkdownComponents: Partial<Components> = {
   },
   td({ children }) {
     return (
-      <td className="px-3 py-2 align-top text-sm text-foreground/95">{children}</td>
+      <td className="px-3 py-2 align-top text-foreground/95">{children}</td>
     )
   },
   p({ children }) {
@@ -83,6 +83,13 @@ const assistantMarkdownComponents: Partial<Components> = {
       </p>
     )
   },
+}
+
+/** Punctuation-only slices between `[doc:…]` markers (e.g. `]:[`); skip as their own block. */
+function isTrivialMarkdownGlue(value: string): boolean {
+  const t = value.trim()
+  if (!t) return true
+  return /^[\s:;,.\-–—()[\]{}]+$/u.test(t)
 }
 
 function splitWithDocMarkers(text: string): DocPart[] {
@@ -116,7 +123,7 @@ function renderCitePart(
 ): ReactNode {
   if (!showCitations) {
     return (
-      <span key={key} className="font-mono text-[11px] text-muted-foreground">
+      <span key={key} className="font-mono text-xs text-muted-foreground">
         [doc:{part.chunkId}]
       </span>
     )
@@ -128,7 +135,7 @@ function renderCitePart(
   return (
     <code
       key={key}
-      className="rounded bg-muted px-1 font-mono text-[10px] text-muted-foreground"
+      className="rounded bg-muted px-1 font-mono text-xs text-muted-foreground"
     >
       [{part.chunkId.slice(0, 8)}…]
     </code>
@@ -136,7 +143,7 @@ function renderCitePart(
 }
 
 function renderMarkdownBlock(key: string, value: string): ReactNode {
-  if (!value) return null
+  if (!value || isTrivialMarkdownGlue(value)) return null
   return (
     <div
       key={key}
@@ -226,7 +233,7 @@ export function MessageBubble({ message, onOpenCitation }: MessageBubbleProps) {
   return (
     <div
       className={cn(
-        "max-w-[min(100%,52rem)] rounded-2xl border px-4 py-3 text-sm leading-relaxed",
+        "max-w-[min(100%,52rem)] rounded-2xl border px-4 py-3 leading-relaxed",
         isUser
           ? "ml-auto border-border/60 bg-muted/40 text-foreground"
           : "mr-auto border-border/40 bg-card/60 text-foreground shadow-sm"

@@ -99,7 +99,7 @@ const snippetMarkdownComponents: Partial<Components> = {
   ),
   em: ({ children }) => <em className="italic text-foreground/90">{children}</em>,
   code: ({ children }) => (
-    <code className="rounded bg-muted/60 px-1 font-mono text-[11px] text-foreground">
+    <code className="rounded bg-muted/60 px-1 font-mono text-xs text-foreground">
       {children}
     </code>
   ),
@@ -138,14 +138,14 @@ const snippetMarkdownComponents: Partial<Components> = {
   },
   th({ children }) {
     return (
-      <th className="px-2.5 py-1.5 text-left text-[11px] font-semibold text-foreground">
+      <th className="px-2.5 py-1.5 text-left text-xs font-semibold text-foreground">
         {children}
       </th>
     )
   },
   td({ children }) {
     return (
-      <td className="px-2.5 py-1.5 align-top text-[11px] text-foreground/90">{children}</td>
+      <td className="px-2.5 py-1.5 align-top text-xs text-foreground/90">{children}</td>
     )
   },
 }
@@ -185,7 +185,7 @@ export function CitationSnippet({ text, className }: CitationSnippetProps) {
   return (
     <div
       className={cn(
-        "mt-2 max-h-[45vh] overflow-auto rounded-md border border-border bg-muted/20 p-4 text-sm leading-relaxed text-foreground",
+        "mt-2 max-h-[45vh] overflow-auto rounded-md border border-border bg-muted/20 p-4 leading-relaxed text-foreground",
         className
       )}
     >

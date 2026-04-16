@@ -202,20 +202,6 @@ export function useChat(folderId: string, sessionId: string | null) {
     [folderId, sessionId, loading]
   )
 
-  const prependBootstrapAssistant = useCallback((content: string) => {
-    setMessages((prev) => {
-      if (prev.length > 0) return prev
-      return [
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content,
-          citations: null,
-        },
-      ]
-    })
-  }, [])
-
   const resetChat = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
@@ -230,7 +216,6 @@ export function useChat(folderId: string, sessionId: string | null) {
     sendMessage,
     loading,
     error,
-    prependBootstrapAssistant,
     resetChat,
   }
 }

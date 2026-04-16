@@ -1,5 +1,6 @@
 "use client"
 
+import { formatIngestErrorForDisplay } from "@/lib/utils/ingest-errors"
 import {
   displaySkipReasonForFile,
   getMimeTypeLabel,
@@ -40,7 +41,7 @@ export function FileCard({ file, status, error, skipReason }: FileCardProps) {
         aria-hidden
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-card-foreground">{file.name}</p>
+        <p className="truncate font-medium text-card-foreground">{file.name}</p>
         <p className="truncate text-xs text-muted-foreground">
           {getMimeTypeLabel(file.mimeType)}
         </p>
@@ -50,7 +51,11 @@ export function FileCard({ file, status, error, skipReason }: FileCardProps) {
             {displaySkipReasonForFile(skipReason, file.mimeType)}
           </p>
         ) : null}
-        {error ? <p className="mt-1 text-xs text-destructive">{error}</p> : null}
+        {error ? (
+          <p className="mt-1 text-xs text-destructive">
+            {formatIngestErrorForDisplay(error)}
+          </p>
+        ) : null}
       </div>
     </div>
   )

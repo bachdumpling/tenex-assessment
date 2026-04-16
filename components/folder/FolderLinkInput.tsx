@@ -5,8 +5,14 @@ import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { parseDriveFolderUrl } from "@/lib/utils/folder-url"
+import { cn } from "@/lib/utils"
+import { ArrowUp } from "lucide-react"
 
-export function FolderLinkInput() {
+type FolderLinkInputProps = {
+  className?: string
+}
+
+export function FolderLinkInput({ className }: FolderLinkInputProps) {
   const router = useRouter()
   const [value, setValue] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -22,22 +28,41 @@ export function FolderLinkInput() {
   }
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-3">
-      <label className="text-sm font-medium text-foreground" htmlFor="folder-url">
+    <div className={cn("flex w-full max-w-xl flex-col gap-3", className)}>
+      <label className="font-medium text-foreground" htmlFor="folder-url">
         Google Drive folder link
       </label>
-      <textarea
-        id="folder-url"
-        rows={3}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder="https://drive.google.com/drive/folders/…"
-        className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none ring-offset-background focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-      />
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <Button type="button" onClick={submit} className="self-start">
-        Open folder
-      </Button>
+      <div className="relative w-full min-w-0">
+        <textarea
+          id="folder-url"
+          rows={2}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault()
+              submit()
+            }
+          }}
+          placeholder="https://drive.google.com/drive/folders/…"
+          className="w-full min-h-12 max-h-32 resize-y rounded-md border border-input bg-background px-3 py-1.5 pr-11 pb-8 text-foreground outline-none ring-offset-background focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+        />
+        <div className="pointer-events-none absolute bottom-4 right-2 z-10 flex items-center [&_button]:pointer-events-auto">
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="default"
+            className="shadow-sm"
+            aria-label="Open folder"
+            onClick={() => {
+              submit()
+            }}
+          >
+            <ArrowUp className="size-4" aria-hidden />
+          </Button>
+        </div>
+      </div>
+      {error ? <p className="text-destructive">{error}</p> : null}
     </div>
   )
 }

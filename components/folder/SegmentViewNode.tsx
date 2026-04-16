@@ -1,5 +1,6 @@
 "use client"
 
+import { bentoPanelClass } from "@/components/layout/bento-panel"
 import { cn } from "@/lib/utils"
 
 type SegmentViewNodeProps = {
@@ -13,9 +14,6 @@ type SegmentViewNodeProps = {
  * Full-viewport bento shell: left ~⅓ (meta + files, each scroll-y), right ~⅔ chat.
  */
 export function SegmentViewNode({ meta, files, chat, className }: SegmentViewNodeProps) {
-  const cell =
-    "min-h-0 overflow-y-auto rounded-xl border border-border bg-card/40 p-4 shadow-sm"
-
   return (
     <div
       className={cn(
@@ -26,13 +24,13 @@ export function SegmentViewNode({ meta, files, chat, className }: SegmentViewNod
       )}
     >
       <section
-        className={cn(cell, "col-start-1 row-start-1 md:row-start-1")}
+        className={cn(bentoPanelClass, "col-start-1 row-start-1 md:row-start-1")}
         aria-label="Folder overview"
       >
         {meta}
       </section>
       <section
-        className={cn(cell, "col-start-1 row-start-2 md:row-start-2")}
+        className={cn(bentoPanelClass, "col-start-1 row-start-2 md:row-start-2")}
         aria-label="Files"
       >
         {files}
