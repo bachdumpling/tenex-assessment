@@ -15,6 +15,7 @@ export function mapChatMessagesToAnthropic(messages: ChatApiMessage[]): MessageP
 export function createAgentNdjsonStream(params: {
   folderId: string
   messages: ChatApiMessage[]
+  signal?: AbortSignal
 }): ReadableStream<Uint8Array> {
   const systemPrompt = buildFolderAgentSystemPrompt(params.folderId)
   const anthropicMessages = mapChatMessagesToAnthropic(params.messages)
@@ -22,5 +23,6 @@ export function createAgentNdjsonStream(params: {
     folderId: params.folderId,
     messages: anthropicMessages,
     systemPrompt,
+    signal: params.signal,
   })
 }

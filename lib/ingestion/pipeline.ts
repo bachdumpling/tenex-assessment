@@ -10,7 +10,7 @@ import {
   updateDocumentById,
 } from "@/lib/db/queries/documents"
 import { driveFileUrl, fileHasParent, getFileMetadata } from "@/lib/google/drive"
-import { getValidAccessToken } from "@/lib/google/tokens"
+import { GoogleReauthRequiredError, getValidAccessToken } from "@/lib/google/tokens"
 import { chunkDocumentText, chunkerSourceForMime } from "@/lib/ingestion/chunker"
 import { embedDocumentChunks } from "@/lib/ingestion/embedder"
 import { extractDocumentText } from "@/lib/ingestion/extract"
@@ -168,6 +168,9 @@ export async function runFolderFileIngest(params: {
     return { ok: true, documentId: processing.id, status: "indexed" }
   } catch (e) {
     console.error("[ingest] runFolderFileIngest", e)
+    if (e instanceof GoogleReauthRequiredError) {
+      throw e
+    }
     const message = e instanceof Error ? e.message : String(e)
     if (documentId) {
       await updateDocumentById(documentId, { status: "failed", error: message })

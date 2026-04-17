@@ -1,6 +1,7 @@
 import "server-only"
 
 import { getValidAccessToken } from "@/lib/google/tokens"
+import { HttpStatusError, retryWithBackoff } from "@/lib/utils/retry"
 import type { DriveFileListItem, DriveFileMetadata } from "@/types/drive"
 
 const DRIVE_FILES = "https://www.googleapis.com/drive/v3/files"
@@ -46,6 +47,34 @@ function driveFileUrl(fileId: string): string {
   return `https://drive.google.com/file/d/${fileId}/view`
 }
 
+/**
+ * Wrapper that fetches + retries on 429/5xx + network errors, throwing
+ * `HttpStatusError` so non-retriable codes (401/403/404) fail fast.
+ */
+async function driveFetch(
+  url: string,
+  accessToken: string,
+  label: string
+): Promise<Response> {
+  return retryWithBackoff(
+    async (signal) => {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal,
+      })
+      if (!res.ok) {
+        const detail = await driveHttpErrorBody(res)
+        throw new HttpStatusError(
+          res.status,
+          `${label} failed (${res.status}): ${detail}`
+        )
+      }
+      return res
+    },
+    { label }
+  )
+}
+
 export async function getFileMetadata(
   accessToken: string,
   fileId: string
@@ -56,13 +85,7 @@ export async function getFileMetadata(
     "id,name,mimeType,modifiedTime,webViewLink,parents,size"
   )
 
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
-  if (!res.ok) {
-    const detail = await driveHttpErrorBody(res)
-    throw new Error(`Drive files.get failed (${res.status}): ${detail}`)
-  }
+  const res = await driveFetch(url.toString(), accessToken, "Drive files.get")
   const data = (await res.json()) as {
     id?: string
     name?: string
@@ -113,13 +136,7 @@ export async function exportGoogleFile(
   )
   url.searchParams.set("mimeType", exportMimeType)
 
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
-  if (!res.ok) {
-    const detail = await driveHttpErrorBody(res)
-    throw new Error(`Drive export failed (${res.status}): ${detail}`)
-  }
+  const res = await driveFetch(url.toString(), accessToken, "Drive export")
   return res.text()
 }
 
@@ -133,13 +150,7 @@ export async function downloadFileMedia(
   const url = new URL(`${DRIVE_FILES}/${encodeURIComponent(fileId)}`)
   url.searchParams.set("alt", "media")
 
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
-  if (!res.ok) {
-    const detail = await driveHttpErrorBody(res)
-    throw new Error(`Drive download failed (${res.status}): ${detail}`)
-  }
+  const res = await driveFetch(url.toString(), accessToken, "Drive download")
   return res.arrayBuffer()
 }
 
@@ -160,13 +171,7 @@ export async function listFilesInFolder(
     url.searchParams.set("pageSize", "100")
     if (pageToken) url.searchParams.set("pageToken", pageToken)
 
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-    if (!res.ok) {
-      const detail = await driveHttpErrorBody(res)
-      throw new Error(`Drive list failed (${res.status}): ${detail}`)
-    }
+    const res = await driveFetch(url.toString(), accessToken, "Drive list")
     const data = (await res.json()) as {
       files?: {
         id?: string

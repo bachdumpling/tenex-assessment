@@ -4,10 +4,14 @@ import { forwardNdjsonStreamWithCapture } from "@/lib/chat/ndjson-forward"
 import { appendAssistantIfNew, appendUserIfNew } from "@/lib/db/queries/messages"
 import { getSessionIfOwned } from "@/lib/db/queries/sessions"
 import { assertUserCanAccessDriveFile } from "@/lib/google/drive"
+import { GoogleReauthRequiredError } from "@/lib/google/tokens"
 import type { ChatApiMessage } from "@/types/agent"
 import { NextResponse } from "next/server"
 
 export const runtime = "nodejs"
+
+const MAX_MESSAGES = 40
+const MAX_TOTAL_CONTENT_CHARS = 60_000
 
 export async function POST(req: Request) {
   const session = await auth()
@@ -41,8 +45,15 @@ export async function POST(req: Request) {
       { status: 400 }
     )
   }
+  if (rawMessages.length > MAX_MESSAGES) {
+    return NextResponse.json(
+      { error: `Too many messages in this turn (max ${MAX_MESSAGES}).` },
+      { status: 400 }
+    )
+  }
 
   const parsed: ChatApiMessage[] = []
+  let totalChars = 0
   for (const m of rawMessages) {
     if (!m || typeof m !== "object") {
       return NextResponse.json({ error: "Invalid message entry." }, { status: 400 })
@@ -62,6 +73,15 @@ export async function POST(req: Request) {
         { status: 400 }
       )
     }
+    totalChars += trimmed.length
+    if (totalChars > MAX_TOTAL_CONTENT_CHARS) {
+      return NextResponse.json(
+        {
+          error: `Conversation is too long (max ${MAX_TOTAL_CONTENT_CHARS} characters). Start a new chat.`,
+        },
+        { status: 400 }
+      )
+    }
     parsed.push({ role, content: trimmed })
   }
 
@@ -75,7 +95,13 @@ export async function POST(req: Request) {
 
   try {
     await assertUserCanAccessDriveFile(session.user.id, folderId)
-  } catch {
+  } catch (err) {
+    if (err instanceof GoogleReauthRequiredError) {
+      return NextResponse.json(
+        { error: err.message, code: "reauth_required" },
+        { status: 401 }
+      )
+    }
     return NextResponse.json(
       { error: "You cannot access this folder with the linked Google account." },
       { status: 403 }
@@ -99,6 +125,7 @@ export async function POST(req: Request) {
   const inner = createAgentNdjsonStream({
     folderId,
     messages: parsed,
+    signal: req.signal,
   })
 
   const stream =

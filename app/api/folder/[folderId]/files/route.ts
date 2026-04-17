@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { getFileMetadata, listFilesInFolder } from "@/lib/google/drive"
-import { getValidAccessToken } from "@/lib/google/tokens"
+import { GoogleReauthRequiredError, getValidAccessToken } from "@/lib/google/tokens"
 import { NextResponse } from "next/server"
 
 type RouteContext = { params: Promise<{ folderId: string }> }
@@ -30,6 +30,12 @@ export async function GET(_req: Request, context: RouteContext) {
 
     return NextResponse.json(folder ? { files, folder } : { files })
   } catch (e) {
+    if (e instanceof GoogleReauthRequiredError) {
+      return NextResponse.json(
+        { error: e.message, code: "reauth_required" },
+        { status: 401 }
+      )
+    }
     const message = e instanceof Error ? e.message : "Failed to list files"
     return NextResponse.json({ error: message }, { status: 500 })
   }

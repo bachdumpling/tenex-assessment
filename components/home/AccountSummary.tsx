@@ -35,6 +35,7 @@ export function AccountSummary({ name, email, image, className }: AccountSummary
     >
       <div className="flex min-w-0 items-center gap-3">
         {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
             alt=""

@@ -5,6 +5,7 @@ import {
   ensureSessionForUserFolder,
 } from "@/lib/db/queries/sessions"
 import { assertUserCanAccessDriveFile } from "@/lib/google/drive"
+import { GoogleReauthRequiredError } from "@/lib/google/tokens"
 import { NextResponse } from "next/server"
 
 type RouteContext = { params: Promise<{ folderId: string }> }
@@ -23,7 +24,13 @@ export async function POST(_req: Request, context: RouteContext) {
 
   try {
     await assertUserCanAccessDriveFile(session.user.id, folderId)
-  } catch {
+  } catch (err) {
+    if (err instanceof GoogleReauthRequiredError) {
+      return NextResponse.json(
+        { error: err.message, code: "reauth_required" },
+        { status: 401 }
+      )
+    }
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -52,7 +59,13 @@ export async function GET(_req: Request, context: RouteContext) {
 
   try {
     await assertUserCanAccessDriveFile(session.user.id, folderId)
-  } catch {
+  } catch (err) {
+    if (err instanceof GoogleReauthRequiredError) {
+      return NextResponse.json(
+        { error: err.message, code: "reauth_required" },
+        { status: 401 }
+      )
+    }
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

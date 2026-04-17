@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored third-party UI that we do not maintain.
+    "components/ai-elements/**",
+    "components/Waves.tsx",
   ]),
 ]);
 

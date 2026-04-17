@@ -4,7 +4,7 @@ import {
   assertUserCanAccessDriveFile,
   listFilesInFolder,
 } from "@/lib/google/drive"
-import { getValidAccessToken } from "@/lib/google/tokens"
+import { GoogleReauthRequiredError, getValidAccessToken } from "@/lib/google/tokens"
 import { NextResponse } from "next/server"
 
 export const runtime = "nodejs"
@@ -28,7 +28,13 @@ export async function GET(_req: Request, context: RouteContext) {
 
   try {
     await assertUserCanAccessDriveFile(session.user.id, folderId)
-  } catch {
+  } catch (err) {
+    if (err instanceof GoogleReauthRequiredError) {
+      return NextResponse.json(
+        { error: err.message, code: "reauth_required" },
+        { status: 401 }
+      )
+    }
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -53,6 +59,12 @@ export async function GET(_req: Request, context: RouteContext) {
 
     return NextResponse.json({ stale })
   } catch (e) {
+    if (e instanceof GoogleReauthRequiredError) {
+      return NextResponse.json(
+        { error: e.message, code: "reauth_required" },
+        { status: 401 }
+      )
+    }
     const message =
       e instanceof Error ? e.message : "Failed to check index status"
     return NextResponse.json({ error: message }, { status: 500 })

@@ -1,4 +1,5 @@
 import { auth } from "@/auth"
+import { GoogleReauthRequiredError } from "@/lib/google/tokens"
 import { runFolderFileIngest } from "@/lib/ingestion/pipeline"
 import { NextResponse } from "next/server"
 
@@ -15,11 +16,22 @@ export async function POST(_req: Request, context: RouteContext) {
     return NextResponse.json({ error: "Missing folderId or fileId" }, { status: 400 })
   }
 
-  const result = await runFolderFileIngest({
-    userId: session.user.id,
-    folderId,
-    fileId,
-  })
+  let result
+  try {
+    result = await runFolderFileIngest({
+      userId: session.user.id,
+      folderId,
+      fileId,
+    })
+  } catch (err) {
+    if (err instanceof GoogleReauthRequiredError) {
+      return NextResponse.json(
+        { error: err.message, code: "reauth_required" },
+        { status: 401 }
+      )
+    }
+    throw err
+  }
 
   if (!result.ok) {
     return NextResponse.json({

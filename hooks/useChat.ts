@@ -105,6 +105,8 @@ export function useChat(folderId: string, sessionId: string | null) {
         )
       }
 
+      let sawTerminalEvent = false
+
       const applyEvents = (events: StreamEvent[]) => {
         for (const ev of events) {
           switch (ev.type) {
@@ -136,6 +138,7 @@ export function useChat(folderId: string, sessionId: string | null) {
               }))
               break
             case "done":
+              sawTerminalEvent = true
               patchAssistant((m) => ({
                 ...m,
                 citations: ev.citations,
@@ -143,6 +146,7 @@ export function useChat(folderId: string, sessionId: string | null) {
               }))
               break
             case "error":
+              sawTerminalEvent = true
               patchAssistant((m) => ({
                 ...m,
                 isStreaming: false,
@@ -188,6 +192,17 @@ export function useChat(folderId: string, sessionId: string | null) {
           } catch {
             /* ignore */
           }
+        }
+        if (!sawTerminalEvent) {
+          patchAssistant((m) =>
+            m.isStreaming
+              ? {
+                  ...m,
+                  isStreaming: false,
+                  streamError: "Stream ended unexpectedly.",
+                }
+              : m
+          )
         }
       } catch (e) {
         if ((e as Error).name === "AbortError") return

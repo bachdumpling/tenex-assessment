@@ -1,5 +1,6 @@
 import "server-only"
 
+import { HttpStatusError, retryWithBackoff } from "@/lib/utils/retry"
 import { GoogleGenAI } from "@google/genai"
 
 const MODEL = "gemini-embedding-001"
@@ -14,6 +15,22 @@ function getClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey })
 }
 
+/** The Gemini SDK throws plain Errors that embed the HTTP status; extract it when possible. */
+function toStatusAwareError(err: unknown): unknown {
+  if (err instanceof HttpStatusError) return err
+  if (err instanceof Error) {
+    const maybeStatus = (err as Error & { status?: unknown }).status
+    if (typeof maybeStatus === "number") {
+      return new HttpStatusError(maybeStatus, err.message)
+    }
+    const match = /\b(4\d{2}|5\d{2})\b/.exec(err.message)
+    if (match) {
+      return new HttpStatusError(Number(match[1]), err.message)
+    }
+  }
+  return err
+}
+
 /**
  * Embed document chunks for ingestion. Batches of up to 50 per request.
  * Uses RETRIEVAL_DOCUMENT task type (Gemini embedding API).
@@ -25,11 +42,20 @@ export async function embedDocumentChunks(texts: string[]): Promise<number[][]> 
 
   for (let offset = 0; offset < texts.length; offset += BATCH_SIZE) {
     const batch = texts.slice(offset, offset + BATCH_SIZE)
-    const res = await ai.models.embedContent({
-      model: MODEL,
-      contents: batch,
-      config: { taskType: "RETRIEVAL_DOCUMENT" },
-    })
+    const res = await retryWithBackoff(
+      async () => {
+        try {
+          return await ai.models.embedContent({
+            model: MODEL,
+            contents: batch,
+            config: { taskType: "RETRIEVAL_DOCUMENT" },
+          })
+        } catch (err) {
+          throw toStatusAwareError(err)
+        }
+      },
+      { label: "Gemini embed (document)", timeoutMs: 9000 }
+    )
     const embeddings = res.embeddings ?? []
     if (embeddings.length !== batch.length) {
       throw new Error(
@@ -59,11 +85,20 @@ export async function embedSearchQuery(text: string): Promise<number[]> {
     throw new Error("Search query text is empty.")
   }
   const ai = getClient()
-  const res = await ai.models.embedContent({
-    model: MODEL,
-    contents: [trimmed],
-    config: { taskType: "RETRIEVAL_QUERY" },
-  })
+  const res = await retryWithBackoff(
+    async () => {
+      try {
+        return await ai.models.embedContent({
+          model: MODEL,
+          contents: [trimmed],
+          config: { taskType: "RETRIEVAL_QUERY" },
+        })
+      } catch (err) {
+        throw toStatusAwareError(err)
+      }
+    },
+    { label: "Gemini embed (query)", timeoutMs: 9000 }
+  )
   const emb = res.embeddings?.[0]
   const values = emb?.values
   if (!values || values.length !== EXPECTED_DIM) {
