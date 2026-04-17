@@ -11,5 +11,5 @@ export default async function FolderPage({ params }: PageProps) {
   }
   const { folderId } = await params
 
-  return <FolderWorkspace folderId={folderId} />
+  return <FolderWorkspace folderId={folderId} userId={session.user.id} />
 }

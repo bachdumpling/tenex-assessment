@@ -12,6 +12,7 @@ import { useEffect, useState } from "react"
 
 type RecentFoldersProps = {
   className?: string
+  userId: string | null | undefined
 }
 
 function formatVisited(visitedAt: number): string {
@@ -27,12 +28,12 @@ function formatVisited(visitedAt: number): string {
   return new Date(visitedAt).toLocaleDateString()
 }
 
-export function RecentFolders({ className }: RecentFoldersProps) {
+export function RecentFolders({ className, userId }: RecentFoldersProps) {
   const [items, setItems] = useState<RecentFolderEntry[]>([])
 
   useEffect(() => {
     function refresh() {
-      setItems(readRecentFolders())
+      setItems(readRecentFolders(userId))
     }
     refresh()
     window.addEventListener("storage", refresh)
@@ -41,7 +42,7 @@ export function RecentFolders({ className }: RecentFoldersProps) {
       window.removeEventListener("storage", refresh)
       window.removeEventListener(RECENT_FOLDERS_CHANGED_EVENT, refresh)
     }
-  }, [])
+  }, [userId])
 
   if (items.length === 0) {
     return (

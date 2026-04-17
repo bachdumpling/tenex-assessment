@@ -1,6 +1,7 @@
-/** Client-only MRU list of opened Drive folders (localStorage). */
+/** Client-only MRU list of opened Drive folders (localStorage), scoped per user. */
 
-export const RECENT_FOLDERS_STORAGE_KEY = "ttaf:recentFolders"
+const STORAGE_KEY_PREFIX = "ttaf:recentFolders"
+const LEGACY_STORAGE_KEY = "ttaf:recentFolders"
 
 export const RECENT_FOLDERS_CHANGED_EVENT = "ttaf-recent-folders"
 
@@ -10,6 +11,10 @@ export type RecentFolderEntry = {
   folderId: string
   label: string
   visitedAt: number
+}
+
+function storageKey(userId: string): string {
+  return `${STORAGE_KEY_PREFIX}:${userId}`
 }
 
 function parseStored(raw: string | null): RecentFolderEntry[] {
@@ -38,28 +43,44 @@ function parseStored(raw: string | null): RecentFolderEntry[] {
   }
 }
 
-export function readRecentFolders(): RecentFolderEntry[] {
+/** Remove the pre-namespacing key so prior users' lists don't leak on shared browsers. */
+function clearLegacyKeyIfPresent(): void {
+  if (typeof window === "undefined") return
+  if (localStorage.getItem(LEGACY_STORAGE_KEY) !== null) {
+    localStorage.removeItem(LEGACY_STORAGE_KEY)
+  }
+}
+
+export function readRecentFolders(userId: string | null | undefined): RecentFolderEntry[] {
   if (typeof window === "undefined") return []
-  return parseStored(localStorage.getItem(RECENT_FOLDERS_STORAGE_KEY))
+  clearLegacyKeyIfPresent()
+  const id = userId?.trim()
+  if (!id) return []
+  return parseStored(localStorage.getItem(storageKey(id)))
 }
 
 export function touchRecentFolder(params: {
+  userId: string | null | undefined
   folderId: string
   label: string
 }): void {
   if (typeof window === "undefined") return
+  clearLegacyKeyIfPresent()
+  const userId = params.userId?.trim()
+  if (!userId) return
   const folderId = params.folderId.trim()
   if (!folderId) return
   const label =
     params.label.trim() ||
     (folderId.length > 12 ? `${folderId.slice(0, 8)}…` : folderId)
-  const prev = parseStored(
-    localStorage.getItem(RECENT_FOLDERS_STORAGE_KEY)
-  ).filter((e) => e.folderId !== folderId)
+  const key = storageKey(userId)
+  const prev = parseStored(localStorage.getItem(key)).filter(
+    (e) => e.folderId !== folderId
+  )
   const next: RecentFolderEntry[] = [
     { folderId, label, visitedAt: Date.now() },
     ...prev,
   ].slice(0, MAX_ENTRIES)
-  localStorage.setItem(RECENT_FOLDERS_STORAGE_KEY, JSON.stringify(next))
+  localStorage.setItem(key, JSON.stringify(next))
   window.dispatchEvent(new Event(RECENT_FOLDERS_CHANGED_EVENT))
 }

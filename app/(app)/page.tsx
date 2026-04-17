@@ -47,7 +47,7 @@ export default async function HomePage() {
           }
           account={<AccountSummary name={u.name} email={u.email} image={u.image} />}
           folderLink={<FolderLinkInput className="w-full max-w-none" />}
-          recents={<RecentFolders />}
+          recents={<RecentFolders userId={u.id} />}
         />
       </div>
     </div>

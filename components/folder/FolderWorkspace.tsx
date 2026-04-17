@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 type FolderWorkspaceProps = {
   folderId: string
+  userId: string | null | undefined
 }
 
 type FolderChatPayload = {
@@ -21,7 +22,7 @@ type FolderChatPayload = {
   error?: string
 }
 
-export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
+export function FolderWorkspace({ folderId, userId }: FolderWorkspaceProps) {
   const {
     files,
     folderName,
@@ -106,10 +107,11 @@ export function FolderWorkspace({ folderId }: FolderWorkspaceProps) {
   useEffect(() => {
     if (phase !== "done" || !folderId) return
     touchRecentFolder({
+      userId,
       folderId,
       label: folderName?.trim() || "Drive folder",
     })
-  }, [phase, folderId, folderName])
+  }, [phase, folderId, folderName, userId])
 
   const starterQuestions = useMemo(() => {
     const defaults = [
